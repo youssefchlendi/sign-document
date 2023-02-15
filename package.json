@@ -20,7 +20,8 @@
     "core-js": "^3.6.5",
     "ionicons": "^6.0.3",
     "vue": "^3.2.21",
-    "vue-router": "^4.0.12"
+    "vue-router": "^4.0.12",
+    "vue-signature-pad": "^3.0.2"
   },
   "devDependencies": {
     "@capacitor/cli": "4.6.3",
