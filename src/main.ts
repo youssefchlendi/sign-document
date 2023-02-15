@@ -22,13 +22,16 @@ import '@ionic/vue/css/display.css';
 
 /* Theme variables */
 import './theme/variables.css';
-// import { VueSignaturePad } from "vue-signature-pad";
+import {
+	createPinia
+} from 'pinia';
+const pinia = createPinia()
 
 const app = createApp(App)
 .use(IonicVue)
-.use(router);
+.use(router)
+.use(pinia);
 
-// app.component('vue-signature-pad', VueSignaturePad);
 
 router.isReady().then(() => {
   app.mount('#app');
