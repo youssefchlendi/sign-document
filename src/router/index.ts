@@ -1,11 +1,12 @@
 import { createRouter, createWebHistory } from '@ionic/vue-router';
 import { RouteRecordRaw } from 'vue-router';
 import TabsPage from '../views/TabsPage.vue'
+import sig from '../views/SignaturesPage.vue'
 
 const routes: Array<RouteRecordRaw> = [
 	{
 		path: '/',
-		redirect: '/tabs/tab1'
+		redirect: '/tabs/signatures'
 	},
 	{
 		path: '/tabs/',
@@ -15,13 +16,18 @@ const routes: Array<RouteRecordRaw> = [
 				path: '',
 				redirect: '/tabs/signatures'
 			},
+			
 			{
 				path: 'signatures',
-				component: () => import('@/views/SignaturesPage.vue')
+				component:sig
 			},
 			{
 				path: 'files',
 				component: () => import('@/views/FilesPage.vue')
+			},
+			{
+				path: 'settings',
+				component: () => import('@/views/SettingsPage.vue')
 			}
 		]
 	},

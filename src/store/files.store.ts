@@ -11,6 +11,10 @@ export const useFilesStore = defineStore("files-store",() => {
 		}
 	]);
 
+	function getFileById(id: number) {
+		return files.value.find((file) => file.id === id);
+	}
+
 	async function addFile(data:string, title:string) {
 		const file = new File(title, data);
 		files.value.push(file);
@@ -31,7 +35,8 @@ export const useFilesStore = defineStore("files-store",() => {
 		files,
 		addFile,
 		removeFile,
-		clearFiles
+		clearFiles,
+		getFileById
 	}
 
 });
