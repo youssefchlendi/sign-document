@@ -10,26 +10,7 @@
 			</ion-toolbar>
 		</ion-header>
 		<ion-content :fullscreen="true">
-
-			<!-- <div class="sigCont" v-for="sig in signatureStore.signatures" :key="sig.id">
-							<ion-img @dragstart="dragmouse($event, sig)" @touchstart.prevent="touchstartDrag($event, sig, [])"
-								@touchmove="touchmoveDrag" @touchend="touchendDrag" style="width:100px;height:100px"
-								class="grabbable square" width="100px" height="100px" :draggable="true" :src="sig.signature" />
-						</div> -->
-
-
-
-			<!-- <ion-fab @click="addSignature" v-if="selectedPage != -1" slot="fixed" vertical="bottom" horizontal="end">
-									<ion-fab-button>
-										<ion-icon :icon="pencil"></ion-icon>
-									</ion-fab-button>
-								</ion-fab>
-								<ion-fab @click="downloadDocument"  slot="fixed" vertical="bottom" horizontal="start">
-									<ion-fab-button>
-										<ion-icon :icon="pencil"></ion-icon>
-									</ion-fab-button>
-								</ion-fab> -->
-			<div class="footer " v-if="(isPlatform('capacitor')) && !isDragging ">
+			<div class="footer " v-if="(isPlatform('capacitor')) && !isDragging">
 				<ion-slides style="" :pager="false" :options="slideOpts">
 					<ion-slide v-if="signatureStore.signatures.length == 0">
 						<h1>Slide 1</h1>
@@ -42,8 +23,8 @@
 					</ion-slide>
 				</ion-slides>
 			</div>
-			<div  id="delete-mobile" class="footer danger-footer"
-				v-show="(isPlatform('capacitor') ) && isDragging && selectedSection">
+			<div id="delete-mobile" class="footer danger-footer"
+				v-show="((isPlatform('capacitor')) && isDragging && selectedSection)">
 				<h1>
 					Drop here to delete
 				</h1>
@@ -61,7 +42,7 @@
 							</ion-slide>
 						</div>
 					</ion-col>
-					<ion-col :size="isPlatform('capacitor')  ? '12' : '10'">
+					<ion-col :size="isPlatform('capacitor') ? '12' : '10'">
 						<!-- centered spinner -->
 						<ion-spinner v-show="loading" name="crescent" color="primary"></ion-spinner>
 						<div v-show="!loading">
@@ -72,33 +53,28 @@
 							<div class="pagination" v-if="!showAllPages">
 								<ion-button @click="prevPage" :disabled="page == 1">Prev</ion-button>
 								<ion-button @click="nextPage" :disabled="page == totalPages">Next</ion-button>
-								<p>{{page}}/{{totalPages}}</p>
+								<p>{{ page }}/{{ totalPages }}</p>
 							</div>
 						</div>
-						<vue-pdf-embed @rendered="handleDocumentRender"  :page="page"     ref="pdfRef" @vnode-updated="myFunction" v-if="pdfFile" :source="pdfFile"></vue-pdf-embed>
+						<vue-pdf-embed @rendered="handleDocumentRender" :page="page" ref="pdfRef"
+							@vnode-updated="initListeners" v-if="pdfFile" :source="pdfFile"></vue-pdf-embed>
 					</ion-col>
 				</ion-row>
 
 			</ion-grid>
-			<ion-fab @click="deleteSignature" color="danger" v-if="selectedSection && !isPlatform('capacitor')" slot="fixed" vertical="bottom"
-				horizontal="start">
+			<ion-fab @click="deleteSignature" color="danger" v-if="selectedSection && !isPlatform('capacitor')" slot="fixed"
+				vertical="bottom" horizontal="start">
 				<ion-fab-button>
 					<ion-icon :icon="pencil"></ion-icon>
 				</ion-fab-button>
 			</ion-fab>
-			
-			<ion-fab @click="downloadFile" color="danger" slot="fixed" vertical="bottom"
-				horizontal="end">
-				<ion-fab-button>
-					<ion-icon :icon="pencil"></ion-icon>
-				</ion-fab-button>
-			</ion-fab>
+
 		</ion-content>
 	</ion-page>
 </template>
 
 <script setup lang="ts">
-import { IonItem,IonCheckbox,IonButton,IonSpinner,IonLabel,IonFab, IonFabButton, IonIcon, alertController, IonImg, IonSlides, IonSlide, IonGrid, IonCol, IonRow } from '@ionic/vue';
+import { IonItem, IonCheckbox, IonButton, IonSpinner, IonLabel, IonFab, IonFabButton, IonIcon, alertController, IonImg, IonSlides, IonSlide, IonGrid, IonCol, IonRow } from '@ionic/vue';
 import { pencil } from 'ionicons/icons';
 import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonBackButton } from '@ionic/vue';
 import VuePdfEmbed from 'vue-pdf-embed'
@@ -108,6 +84,7 @@ import { ref, onBeforeUnmount, watch } from 'vue';
 import { useSignaturesStore } from '@/store/signatures.store';
 import jsPDF from 'jspdf';
 import { isPlatform } from '@ionic/vue';
+import { FileSignature } from '@/models/file_signature.model';
 const slideOpts = {
 	initialSlide: 1,
 };
@@ -123,33 +100,28 @@ const currentPageTextLayer = ref<HTMLDivElement>();
 const signatureStore = useSignaturesStore();
 const isDragging = ref(false);
 const pdfRef = ref();
-const page = ref<number|undefined>(undefined);
+const page = ref<number | undefined>(undefined);
 const totalPages = ref(0);
 const loading = ref(true);
+const init = ref(false);
+const selectedFileSignature = ref<FileSignature | undefined>(undefined);
+
+
 const handleDocumentRender = () => {
-	console.log('event');
 	loading.value = false;
-	// page.value = 1;
 	totalPages.value = pdfRef.value.pageCount;
+	loadSignatures();
 }
+
 
 watch(
 	showAllPages,
 	(val) => {
 		if (val) {
-			console.log('show all pages');
 			page.value = undefined;
-			// pdfRef.value.render();
 			return;
 		}
-		console.log(page.value);
-		console.log(val);
 		page.value = 1;
-		// pdfRef.value.render();
-	},
-	// { immediate: true },
-	{
-
 	}
 );
 
@@ -168,21 +140,10 @@ const nextPage = () => {
 	}
 	page.value = 1;
 }
-const downloadFile = () => {
-	console.log(pdfRef.value);
-}
-const downloadDocument = () => {
-	const dom = document.getElementsByClassName('vue-pdf-embed')[0] as HTMLElement;
-	const doc = new jsPDF();
-	doc.html(dom, {
-		callback: function (doc) {
-			doc.save('a4.pdf');
-		}
-	});
-}
-const myFunction = () => {
+
+
+const initListeners = () => {
 	const divsInsideVuePdfEmbed = document.querySelectorAll('.vue-pdf-embed > div');
-	const deleteMobile = document.getElementById('delete-mobile');
 
 	divsInsideVuePdfEmbed.forEach((div: Element, index) => {
 		const canvas = div.firstChild as HTMLCanvasElement;
@@ -232,7 +193,8 @@ const myFunction = () => {
 		});
 	});
 }
-const addSignature = (data: string, x: number, y: number) => {
+
+const addSignature = (data: string, x: number, y: number, init = false, initAnnotationLayer: (HTMLDivElement | undefined) = undefined, initCanvasLayer: (HTMLCanvasElement | undefined) = undefined, initTextLayer: (HTMLDivElement | undefined) = undefined, fileSignature: (FileSignature | undefined) = undefined) => {
 	const canvas = document.createElement('canvas');
 	canvas.width = 100;
 	canvas.height = 100;
@@ -240,10 +202,10 @@ const addSignature = (data: string, x: number, y: number) => {
 	if (!ctx) {
 		return;
 	}
-	const context = currentPageCanvas.value?.getContext('2d');
+	const context = init ? initCanvasLayer?.getContext('2d') : currentPageCanvas.value?.getContext('2d');
 	const bi = new Image();
 	bi.src = data;
-	bi.onload = () => {
+	bi.onload = async () => {
 		const droppedX = x;
 		const droppedY = y;
 		const scaleImageCoef = 150 / bi.width;
@@ -251,23 +213,42 @@ const addSignature = (data: string, x: number, y: number) => {
 		bi.height = bi.height * scaleImageCoef;
 		const imageWidth = bi.width;
 		const imageHeight = bi.height;
-		const canvasWidth = currentPageCanvas.value?.width ?? 0;
-		const canvasHeight = currentPageCanvas.value?.height ?? 0;
+		const canvasWidth = init ? (initCanvasLayer?.width ?? 0) : currentPageCanvas.value?.width ?? 0;
+		const canvasHeight = init ? (initCanvasLayer?.height ?? 0) : currentPageCanvas.value?.height ?? 0;
 		const windowWidth = document.body.offsetWidth;
 		const windowHeight = document.body.offsetHeight;
-		console.log(x, y);
-		console.log(canvasWidth, canvasHeight);
-		console.log(windowWidth, windowHeight);
+		// console.log(x, y);
+		// console.log(canvasWidth, canvasHeight);
+		// console.log(windowWidth, windowHeight);
 		const spacingX = (document.querySelectorAll(".vue-pdf-embed")[0] as HTMLElement).offsetLeft * 2;
-		console.log(spacingX);
+		// console.log(spacingX);
 		const scaleCoef = canvasWidth / (windowWidth - spacingX)
 
+		let canvasId = 0;
+		if (showAllPages.value) {
+			canvasId = parseInt(currentPageCanvas.value?.id.match(/\d+/g)![0] ?? '0');
+		} else {
+			canvasId = page.value?(page.value -1 < 0 ? 0 : page.value -1):0;
+		}
+		let currentFileSignature: FileSignature | null = null;
+		if (!init) {
+			currentFileSignature = await store.signDocument(parseInt(route.params.id as string), data, droppedX, droppedY, 100, 100, canvasId);
+		}
+		// console.log(currentFileSignature);
 		const section = document.createElement('section');
+		section.dataset.fileId = !init ? currentFileSignature?.fileId.toString() : fileSignature?.fileId.toString();
+		section.dataset.posX = !init ? currentFileSignature?.posX.toString() : fileSignature?.posX.toString();
+		section.dataset.posY = !init ? currentFileSignature?.posY.toString() : fileSignature?.posY.toString();
+		section.dataset.width = !init ? currentFileSignature?.width.toString() : fileSignature?.width.toString();
+		section.dataset.height = !init ? currentFileSignature?.height.toString() : fileSignature?.height.toString();
+		section.dataset.pageNumber = !init ? currentFileSignature?.pageNumber.toString() : fileSignature?.pageNumber.toString();
+		section.dataset.signatureId = !init ? currentFileSignature?.signatureId.toString() : fileSignature?.signatureId.toString();
 		section.classList.add('signature');
 		section.style.position = 'absolute';
 		section.style.top = `${droppedY - imageHeight / 4}px`;
 		section.style.left = `${(droppedX - imageWidth / 4)}px`;
-		section.style.width = `${currentPageAnnotationLayer.value!.offsetWidth * 0.1}px`;
+
+		section.style.width = `${init ? (initAnnotationLayer?.offsetWidth ?? 0) * 0.1 : currentPageAnnotationLayer.value!.offsetWidth * 0.1}px`;
 		section.style.height = `${bi.height * 0.1}px`;
 		section.style.zIndex = '100';
 		section.onmouseover = () => {
@@ -291,7 +272,9 @@ const addSignature = (data: string, x: number, y: number) => {
 		section.ontouchstart = (ev) => {
 			ev.preventDefault();
 			selectedSection.value = section;
-			console.log('touchstart');
+			selectedFileSignature.value = fileSignature;
+			// console.log('touchstart');
+			// console.log(selectedFileSignature.value);
 			touchstartDrag(ev, { signature: data }, [], true);
 		}
 
@@ -306,6 +289,7 @@ const addSignature = (data: string, x: number, y: number) => {
 		section.onclick = (ev) => {
 			ev.preventDefault();
 			ev.stopPropagation();
+
 			if (selectedSection.value) {
 				selectedSection.value.style.filter = 'none';
 			}
@@ -315,6 +299,7 @@ const addSignature = (data: string, x: number, y: number) => {
 			}
 			section.style.filter = 'drop-shadow(0px 0px 5px #890505)';
 			selectedSection.value = section;
+			selectedFileSignature.value = fileSignature;
 
 		}
 
@@ -329,8 +314,15 @@ const addSignature = (data: string, x: number, y: number) => {
 		currentPageAnnotationLayer.value?.querySelectorAll('.signature').forEach((el) => {
 			el.remove();
 		});
-		currentPageAnnotationLayer.value?.appendChild(section);
+		// console.log('i"m here ');
+		// console.log(currentPageAnnotationLayer.value);
+		init ? initAnnotationLayer?.appendChild(section) : currentPageAnnotationLayer.value?.appendChild(section);
+		// console.log(currentPageAnnotationLayer.value);
+		// get numeric part from string using regex
+		// example : canvas1 => 1, canvas2 => 2
 
+
+		// console.log(store.file_signature_cache);
 		// context?.drawImage(bi, (droppedX - imageWidth / 4) * scaleCoef, (droppedY - imageHeight / 4) * scaleCoef,150,150);
 	}
 	// context?.drawImage()
@@ -351,12 +343,16 @@ const deleteSignature = () => {
 					role: 'cancel',
 					cssClass: 'secondary',
 					handler: () => {
-						console.log('Confirm Cancel');
+						// console.log('Confirm Cancel');
 					}
 				}, {
 					text: 'Okay',
 					handler: () => {
 						selectedSection.value?.remove();
+						if (selectedFileSignature.value) {
+							store.deleteSignature(selectedFileSignature.value);
+							loadSignatures();
+						}
 						selectedSection.value = undefined;
 					}
 				}
@@ -369,7 +365,39 @@ const deleteSignature = () => {
 
 }
 
+const loadSignatures = async () => {
+	try {
+		const signatures = store.file_signature_cache?.get(parseInt(route.params?.id as string));
+		if (showAllPages.value) {
+			signatures?.forEach(async (sig: FileSignature, index: number) => {
+				// console.log(index);
+				const signature = await signatureStore.getSignatureById(sig.signatureId);
 
+				if (signature) {
+
+					const initCanvas = document.querySelector(`#canvas${sig.pageNumber}`) as HTMLCanvasElement;
+					const initText = document.querySelector(`#canvas${sig.pageNumber}`)?.parentNode?.querySelector('.textLayer') as HTMLDivElement;
+					const initAnnotation = document.querySelector(`#canvas${sig.pageNumber}`)?.parentNode?.querySelector('.annotationLayer') as HTMLDivElement;
+					// console.log(sig.pageNumber);
+					await addSignature(signature.signature, sig.posX, sig.posY, true, initAnnotation, initCanvas, initText, sig);
+				}
+			})
+		} else {
+			const sig = signatures?.filter((sig: FileSignature) => sig.pageNumber + 1 == page.value);
+			sig.forEach(async (sigi: FileSignature) => {
+				const signature = await signatureStore.getSignatureById(sigi.signatureId);
+				if (signature) {
+					const initCanvas = document.querySelector(`#canvas0`) as HTMLCanvasElement;
+					const initText = document.querySelector(`#canvas0`)?.parentNode?.querySelector('.textLayer') as HTMLDivElement;
+					const initAnnotation = document.querySelector(`#canvas0`)?.parentNode?.querySelector('.annotationLayer') as HTMLDivElement;
+					addSignature(signature.signature, sigi.posX, sigi.posY, true, initAnnotation, initCanvas, initText, sigi);
+				}
+			})
+		}
+	} catch (error) {
+		// console.log(error);
+	}
+}
 
 onBeforeUnmount(() => {
 	const divsInsideVuePdfEmbed = document.querySelectorAll('.vue-pdf-embed > div');
@@ -434,9 +462,9 @@ const touchmoveDrag = (e: any) => {
 
 };
 const touchendDrag = (e: TouchEvent) => {
-	console.log('touchend');
+	// console.log('touchend');
 	(touchDragItem.value as HTMLImageElement).remove();
-
+	// console.log(e);
 	const deleteMobile = document.getElementById('delete-mobile');
 	const minXDeleteMobile = deleteMobile?.getBoundingClientRect().left;
 	const maxXDeleteMobile = deleteMobile?.getBoundingClientRect().right;
@@ -448,12 +476,28 @@ const touchendDrag = (e: TouchEvent) => {
 		minXDeleteMobile! > touchX ||
 		maxYDeleteMobile! < touchY ||
 		minYDeleteMobile! > touchY)
-		console.log('overlap', overlap);
-		console.log('selectedSection', selectedSection.value);
+	// console.log('overlap', overlap);
+	// console.log('selectedSection', selectedSection.value);
 	if (overlap && selectedSection.value) {
 		selectedSection.value.remove();
 		isDragging.value = false;
+		const mySection = ((e.target as HTMLElement).parentNode as HTMLElement);
+		const fileSignatureFromSection: FileSignature = {
+			fileId: parseInt(mySection?.dataset.fileId as string),
+			posX: parseInt(mySection?.dataset.posX as string),
+			posY: parseInt(mySection?.dataset.posY as string),
+			width: parseInt(mySection?.dataset.width as string),
+			height: parseInt(mySection?.dataset.height as string),
+			pageNumber: parseInt(mySection?.dataset.pageNumber as string),
+			signatureId: parseInt(mySection?.dataset.signatureId as string),
+		}
+		// console.log('fileSignatureFromSection')
+		// console.log(fileSignatureFromSection)
+		store.deleteSignature(fileSignatureFromSection);
+
+		// selectedFileSignature.value
 		selectedSection.value = undefined;
+		// console.log('delete');
 		return;
 	}
 	const myCanvases = document.querySelectorAll('canvas');
@@ -472,19 +516,12 @@ const touchendDrag = (e: TouchEvent) => {
 			addSignature((touchDragItem.value as HTMLImageElement).src, touchX - canvasRect.left, touchY - canvasRect.top);
 		}
 	});
-	
+
 
 	isDragging.value = false;
 
 }
 
-const ondragoveri = (ev: DragEvent) =>{
-	ev.preventDefault();
-	const deleteMobile = document.getElementById('delete-mobile');
-	console.log('ondragover');
-	deleteMobile?.classList.add('dragover');
-	ev.preventDefault();
-}
 </script>
 <style>
 .vue-pdf-embed {
