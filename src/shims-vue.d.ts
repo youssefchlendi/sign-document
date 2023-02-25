@@ -9,7 +9,10 @@ declare module 'html2pdf.js' {
 	function html2pdf(element: HTMLElement, options?: any): void;
 	export = html2pdf;
   }
-  
+
+declare module 'fabric' {
+	export const fabric: any;
+}
 
 declare module 'vue-signature-pad' {
 	export interface VueSignaturePad extends _Vue {

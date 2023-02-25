@@ -6,5 +6,6 @@ export interface FileSignature {
 	width: number;
 	height: number;
 	pageNumber: number;
-
+	pageWidth: number;
+	isHandwritten: boolean;
 }

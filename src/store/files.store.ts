@@ -31,7 +31,9 @@ export const useFilesStore = defineStore("files-store", () => {
 						posY: element.posY,
 						width: element.width,
 						height: element.height,
-						pageNumber: element.pageNumber
+						pageNumber: element.pageNumber,
+						pageWidth: element.pageWidth,
+						isHandwritten: element.isHandwritten
 					},
 					...fileSignatureCache.value?.size
 						?
@@ -63,25 +65,20 @@ export const useFilesStore = defineStore("files-store", () => {
 		files.value = [];
 	}
 
-	async function signDocument(docId: number, sig: string, posX: number, posY: number, width: number, height: number, pageNumber: number): Promise<FileSignature | null> {
+	async function signDocument(docId: number, sig: string, posX: number, posY: number, width: number, height: number, pageNumber: number, pageWidth:number, isHandWritten:boolean ): Promise<FileSignature | null> {
 		console.error('signing', docId, sig, posX, posY, width, height, pageNumber);
 
 		localStorage.removeItem(`file_signature_cache_${docId}`);
 		const file = getFileById(docId);
 		const sigId = await store.getSignatureIdByFile(sig);
-		// console.log(file, sigId);
 		if (file && sigId) {
 			const oldSigs = fileSignatureCache.value?.get(docId) as FileSignature[];
 			if (oldSigs) {
-				fileSignatureCache.value?.set(docId, oldSigs.filter((sig: any) => {
-					return (sig.signatureId !== sigId && sig.pageNumber !== pageNumber) || (sig.signatureId == sigId && sig.pageNumber !== pageNumber)
-				}))
+				// fileSignatureCache.value?.set(docId, oldSigs.filter((sig: any) => {
+				// 	return (sig.signatureId !== sigId && sig.pageNumber !== pageNumber) || (sig.signatureId == sigId && sig.pageNumber !== pageNumber)
+				// }))
 			}
-			console.log(
-				(fileSignatureCache.value.get(
-					docId
-				))
-			);
+			
 			fileSignatureCache.value?.set(
 				docId,
 				[{
@@ -91,7 +88,9 @@ export const useFilesStore = defineStore("files-store", () => {
 					posY: posY,
 					width: width,
 					height: height,
-					pageNumber: pageNumber
+					pageNumber: pageNumber,
+					pageWidth: pageWidth,
+					isHandwritten: isHandWritten
 				},
 				...((fileSignatureCache.value && fileSignatureCache.value?.size && fileSignatureCache.value.get(
 					docId
@@ -106,7 +105,6 @@ export const useFilesStore = defineStore("files-store", () => {
 				]
 			);
 localStorage.setItem(`file_signature_cache_${docId}`, JSON.stringify(fileSignatureCache.value.get(docId)));
-console.error('signing', docId, sig, posX, posY, width, height, pageNumber);
 
 return {
 	fileId: docId,
@@ -115,10 +113,11 @@ return {
 	posY: posY,
 	width: width,
 	height: height,
-	pageNumber: pageNumber
+	pageNumber: pageNumber,
+	pageWidth: pageWidth,
+	isHandwritten: isHandWritten
 }
 		}
-		console.error('signing', docId, sig, posX, posY, width, height, pageNumber);
 
 return null;
 		// console.log(JSON.stringify(fileSignatureCache.value.get(docId)));
@@ -129,9 +128,9 @@ const deleteSignature = (
 ) => {
 	const oldSigs = fileSignatureCache.value?.get(fileSignature.fileId) as FileSignature[];
 	if (oldSigs) {
-		console.log("deleteing", fileSignatureCache.value?.size);
+		const mySig = oldSigs.filter(i=>i.signatureId == fileSignature.signatureId && i.pageNumber == fileSignature.pageNumber && i.posX == fileSignature.posX && i.posY == fileSignature.posY  );
 		fileSignatureCache.value?.set(fileSignature.fileId, oldSigs.filter((sig: any) => {
-			return (sig.signatureId !== fileSignature.signatureId && sig.pageNumber !== fileSignature.pageNumber) || (sig.signatureId == fileSignature.signatureId && sig.pageNumber !== fileSignature.pageNumber)
+			return sig != mySig[0]
 		}))
 		console.log('deltetd', fileSignatureCache.value?.size);
 	}

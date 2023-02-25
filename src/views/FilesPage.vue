@@ -28,6 +28,7 @@
 
 					<ion-buttons slot="end">
 						<ion-button  :router-link="{name:'SignAndPreviewFile',params:{id:file.id}}">Preview and sign</ion-button>
+						<ion-button @click="downloadPdf(file.id)">Download</ion-button>
 						<ion-button @click="deleteFile(file)">Delete</ion-button>
 					</ion-buttons>
 				</ion-item>
@@ -43,7 +44,7 @@ import { ref } from 'vue';
 import FileForm from '@/components/files/fileForm.vue';
 import { useFilesStore } from '@/store/files.store';
 import { File } from "@/models/Files.model";
-
+import {downloadPdf} from "@/utils/pdf";
 const pdfFile = ref<string | null>(null);
 const filename = ref<string | null>(null);
 const store = useFilesStore();
