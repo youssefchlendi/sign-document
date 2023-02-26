@@ -13,6 +13,8 @@ import { defineComponent } from 'vue'
 import { useFilesStore } from '@/store/files.store';
 import { degrees, PDFDocument, PDFImage, rgb, StandardFonts } from 'pdf-lib';
 import { useSignaturesStore } from '@/store/signatures.store';
+import fontkit from '@pdf-lib/fontkit';
+
 export default defineComponent({
 	components: { IonPage, IonButton },
 	setup() {
@@ -35,8 +37,16 @@ export default defineComponent({
 
 			const pdfDoc = await PDFDocument.load(existingPdfBytes)
 
+			pdfDoc.registerFontkit(fontkit);
+			const ubuntuFontBytes = await fetch(
+    '/Amiri-Regular.ttf'
+  ).then((res) => res.arrayBuffer());
+  const ubuntuFont = await pdfDoc.embedFont(ubuntuFontBytes);
+
 			const helveticaFont = await pdfDoc.embedFont(StandardFonts.Helvetica)
+			const timesRomanFont = await pdfDoc.embedFont(StandardFonts.TimesRoman)
 			console.log(pdfDoc);
+
 			const pages = pdfDoc.getPages()
 			const firstPage = pages[0]
 			const { width, height } = firstPage.getSize()
@@ -51,6 +61,15 @@ export default defineComponent({
 					height: 50,
 				}
 			)
+
+			firstPage.drawText("'تاست'", {
+				x: 5,
+				y: height / 2 + 300,
+				size: 50,
+				font: ubuntuFont,
+				color: rgb(0.95, 0.1, 0.1),
+				rotate: degrees(-45),
+			})
 			const pdfBytes = await pdfDoc.save();
 			// browser download
 			window.open(URL.createObjectURL(new Blob([pdfBytes], { type: 'application/pdf' })));
