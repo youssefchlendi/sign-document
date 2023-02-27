@@ -105,11 +105,11 @@ import { useRoute } from 'vue-router';
 import { useFilesStore } from '@/store/files.store';
 import { ref, onBeforeUnmount, watch } from 'vue';
 import { useSignaturesStore } from '@/store/signatures.store';
-import { isPlatform } from '@ionic/vue';
+// import { isPlatform } from '@ionic/vue';
 import { FileSignature } from '@/models/file_signature.model';
 import { fabric } from 'fabric';
 import { cropBase64Image } from '@/utils/crop';
-
+const isPlatform = (test:any) => true;
 const showAllPages = ref(true);
 const selectedSection = ref<HTMLElement>();
 const route = useRoute();
@@ -142,18 +142,13 @@ const validateSignByHand = async () => {
 		signatureStore.addSignature('data:image/png;base64,' + img, store.getFileById(parseInt(route.params.id as string))?.name + ' - ' + (selectedPage.value + 1))
 
 		const data = 'data:image/png;base64,' + img;
-		const canvass = document.createElement('canvas');
-		canvass.width = 100;
-		canvass.height = 100;
-		const ctx = canvass.getContext('2d');
-		if (!ctx) {
-			return;
-		}
+
 		const bi = new Image();
 		bi.src = data;
 		bi.onload = async () => {
 			let droppedX = left;
 			let droppedY = top;
+
 			const scaleImageCoef = 1;
 			bi.width = bi.width * scaleImageCoef;
 			bi.height = bi.height * scaleImageCoef;
@@ -162,11 +157,19 @@ const validateSignByHand = async () => {
 			const scaleCoef = 1;
 			droppedX = droppedX * scaleCoef;
 			droppedY = droppedY * scaleCoef;
-			const currentFileSignature: FileSignature | undefined = await store.signDocument(parseInt(route.params.id as string), data, droppedX, droppedY, right - left, bottom - top, selectedPage.value, (windowWidth - spacingX), true) ?? undefined;
-			createAndAppendSection(currentFileSignature, droppedY, droppedX, right, left, bottom, top, data);
+			if(isPlatform('capacitor')){
+				console.log('capacitor')
+				const currentFileSignature: FileSignature | undefined = await store.signDocument(parseInt(route.params.id as string), data, (droppedX/4)-spacingX/2, (droppedY/4), (right - left)/4,( bottom - top)/4, selectedPage.value, (windowWidth - spacingX), true) ?? undefined;
+				createAndAppendSection(currentFileSignature, (droppedY/4), (droppedX/4), right/4, left/4, bottom/4, top/4, data);
+
+			}else{
+				const currentFileSignature: FileSignature | undefined = await store.signDocument(parseInt(route.params.id as string), data, droppedX, droppedY, right - left, bottom - top, selectedPage.value, (windowWidth - spacingX), true) ?? undefined;
+				createAndAppendSection(currentFileSignature, droppedY, droppedX, right, left, bottom, top, data);
+			}
 
 			signingByHand.value = false
 			canvas.remove();
+	
 		}
 	} catch (error: any) {
 		// console.log(error.message);
