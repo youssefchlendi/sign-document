@@ -2,16 +2,53 @@
 	<ion-page>
 		<ion-header>
 			<ion-toolbar>
-				<ion-buttons slot="start">
-					<ion-back-button default-href="/tabs/files">
-					</ion-back-button>
-				</ion-buttons>
-				<ion-title>Tab 3</ion-title>
+				<ion-grid>
+
+					<ion-row class="ion-justify-content-center ion-align-items-center">
+						<ion-col size="auto">
+							<ion-buttons>
+								<ion-back-button default-href="/tabs/files">
+								</ion-back-button>
+							</ion-buttons>
+						</ion-col>
+						<ion-col>
+							<ion-title>File</ion-title>
+						</ion-col>
+						<ion-col size="auto">
+							<ion-buttons>
+
+								<ion-button @click="menu = true" v-if="!menu">
+									<ion-icon :icon="arrowUp"></ion-icon>
+								</ion-button>
+
+								<ion-button @click="menu = false" v-if="menu">
+									<ion-icon :icon="arrowDown"></ion-icon>
+								</ion-button>
+							</ion-buttons>
+						</ion-col>
+					</ion-row>
+					<ion-row v-if="menu">
+						<!-- carroussel -->
+						<ion-col size="12">
+							<ion-slides>
+								<ion-slide v-for="(sig, index) in signatureStore.signatures" :key="index">
+									<ion-img @dragstart="dragmouse($event, sig)"
+										@touchstart.prevent="touchstartDrag($event, sig, [], false)"
+										@touchmove="touchmoveDrag" @touchend="touchendDrag" style="width:100px;height:100px"
+										class="grabbable square imgSlider" width="100px" height="100px" :draggable="true"
+										:src="sig.signature" />
+								</ion-slide>
+							</ion-slides>
+						</ion-col>
+
+					</ion-row>
+				</ion-grid>
+
 			</ion-toolbar>
 		</ion-header>
 		<ion-content :fullscreen="true">
-			<!-- <div class="footer " v-if="(isPlatform('capacitor')) && !isDragging">
-				<ion-slides style="" :pager="false" :options="slideOpts">
+			<div class="footer " v-if="((isPlatform('capacitor'))) && !isDragging && false">
+				<ion-slides style="" :pager="false">
 					<ion-slide v-if="signatureStore.signatures.length == 0">
 						<h1>Slide 1</h1>
 					</ion-slide>
@@ -22,9 +59,8 @@
 							height="100px" :draggable="true" :src="sig.signature" />
 					</ion-slide>
 				</ion-slides>
-			</div> -->
-			<div id="delete-mobile" class="footer danger-footer"
-				v-show="(((isPlatform('capacitor'))) && isDragging && selectedSection)">
+			</div>
+			<div id="delete-mobile" class="footer danger-footer" v-show="(((isPlatform('capacitor'))) && isDragging)">
 				<h1>
 					Drop here to delete
 				</h1>
@@ -32,17 +68,17 @@
 			<ion-grid>
 				<ion-row>
 					<ion-col>
-						<div v-if="!isPlatform('capacitor')" class="side-bar">
-							<ion-slide v-show="!isDragging" style="height:100px;width:100px;"
+						<div v-if="!isPlatform('capacitor') && false" class="side-bar">
+							<!-- <ion-slide v-show="!isDragging" style="height:100px;width:100px;"
 								v-for="sig in signatureStore.signatures" :key="sig.id">
 								<ion-img @dragstart="dragmouse($event, sig)"
 									@touchstart.prevent="touchstartDrag($event, sig, [], false)" @touchmove="touchmoveDrag"
 									@touchend="touchendDrag" style="width:100px;height:100px" class="grabbable square"
 									width="100px" height="100px" :draggable="true" :src="sig.signature" />
-							</ion-slide>
+							</ion-slide> -->
 						</div>
 					</ion-col>
-					<ion-col :size="isPlatform('capacitor') ? '12' : '10'">
+					<ion-col :size="isPlatform('capacitor') || true ? '12' : '10'">
 						<!-- centered spinner -->
 						<ion-spinner v-show="loading" name="crescent" color="primary"></ion-spinner>
 						<div v-show="!loading">
@@ -69,8 +105,8 @@
 				</ion-fab-button>
 			</ion-fab>
 
-			<ion-fab @click="signByHand" v-if="selectedPage != -1 && !signingByHand" slot="fixed" vertical="bottom"
-				horizontal="end">
+			<ion-fab @click="signByHand" v-if="(selectedPage != -1 && !signingByHand) || !showAllPages" slot="fixed"
+				vertical="bottom" horizontal="end">
 				<ion-fab-button>
 					<ion-icon :icon="pencil"></ion-icon>
 				</ion-fab-button>
@@ -92,24 +128,25 @@
 
 
 
+
 		</ion-content>
 	</ion-page>
 </template>
 
 <script setup lang="ts">
 import { IonItem, IonCheckbox, IonButton, IonSpinner, IonLabel, IonFab, IonFabButton, IonIcon, alertController, IonImg, IonSlides, IonSlide, IonGrid, IonCol, IonRow } from '@ionic/vue';
-import { pencil, checkmark, close } from 'ionicons/icons';
+import { pencil, checkmark, close, arrowUp, arrowDown } from 'ionicons/icons';
 import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonBackButton } from '@ionic/vue';
 import VuePdfEmbed from 'vue-pdf-embed'
 import { useRoute } from 'vue-router';
 import { useFilesStore } from '@/store/files.store';
 import { ref, onBeforeUnmount, watch } from 'vue';
 import { useSignaturesStore } from '@/store/signatures.store';
-// import { isPlatform } from '@ionic/vue';
+import { isPlatform } from '@ionic/vue';
 import { FileSignature } from '@/models/file_signature.model';
 import { fabric } from 'fabric';
 import { cropBase64Image } from '@/utils/crop';
-const isPlatform = (test:any) => true;
+// const isPlatform = (test: any) => false;
 const showAllPages = ref(true);
 const selectedSection = ref<HTMLElement>();
 const route = useRoute();
@@ -129,15 +166,19 @@ const draggedItem = ref<{ fs: FileSignature, section: HTMLElement }>();
 const lastDragEvt = ref<DragEvent>();
 const selectedFileSignature = ref<FileSignature | undefined>(undefined);
 const signingByHand = ref(false);
-
-
+const menu = ref(false);
+const pointerI = (e:any)=>{
+	console.log(e);
+}
 const validateSignByHand = async () => {
 	try {
 		const canvas = document.querySelectorAll(`.canvas-container`)[0] as HTMLElement;
 		const myCanvasSignature = canvas?.firstChild as HTMLCanvasElement;
 
 		const base64 = myCanvasSignature.toDataURL("image/png").split(",")[1];
-		const { img, left, top, right, bottom } = await cropBase64Image(base64);
+		console.log(myCanvasSignature.toDataURL("image/png"));
+		// eslint-disable-next-line prefer-const
+		let { img, left, top, right, bottom } = await cropBase64Image(base64);
 
 		signatureStore.addSignature('data:image/png;base64,' + img, store.getFileById(parseInt(route.params.id as string))?.name + ' - ' + (selectedPage.value + 1))
 
@@ -146,6 +187,7 @@ const validateSignByHand = async () => {
 		const bi = new Image();
 		bi.src = data;
 		bi.onload = async () => {
+
 			let droppedX = left;
 			let droppedY = top;
 
@@ -157,22 +199,46 @@ const validateSignByHand = async () => {
 			const scaleCoef = 1;
 			droppedX = droppedX * scaleCoef;
 			droppedY = droppedY * scaleCoef;
-			if(isPlatform('capacitor')){
-				console.log('capacitor')
-				const currentFileSignature: FileSignature | undefined = await store.signDocument(parseInt(route.params.id as string), data, (droppedX/4)-spacingX/2, (droppedY/4), (right - left)/4,( bottom - top)/4, selectedPage.value, (windowWidth - spacingX), true) ?? undefined;
-				createAndAppendSection(currentFileSignature, (droppedY/4), (droppedX/4), right/4, left/4, bottom/4, top/4, data);
 
-			}else{
-				const currentFileSignature: FileSignature | undefined = await store.signDocument(parseInt(route.params.id as string), data, droppedX, droppedY, right - left, bottom - top, selectedPage.value, (windowWidth - spacingX), true) ?? undefined;
-				createAndAppendSection(currentFileSignature, droppedY, droppedX, right, left, bottom, top, data);
-			}
+			droppedX = droppedX * 1 / 3;
+			droppedY = droppedY * 1 / 3;
+			left = left * 1 / 3;
+			top = top * 1 / 3;
+			right = right * 1 / 3;
+			bottom = bottom * 1 / 3;
+
+
+			const currentFileSignature: FileSignature | undefined = await store.signDocument(
+				parseInt(route.params.id as string),
+				data,
+				droppedX,
+				droppedY,
+				(right - left),
+				(bottom - top),
+				showAllPages.value ? selectedPage.value : (page.value ?? 1) - 1,
+				(windowWidth - spacingX),
+				true
+			) ?? undefined;
+
+			createAndAppendSection(
+				currentFileSignature,
+				(droppedY),
+				(droppedX),
+				right,
+				left,
+				bottom,
+				top,
+				data
+			);
+
+			await loadSignatures();
 
 			signingByHand.value = false
 			canvas.remove();
-	
+
 		}
 	} catch (error: any) {
-		// console.log(error.message);
+		console.log(error);
 	}
 
 }
@@ -183,7 +249,8 @@ const cancelSignByHand = () => {
 }
 const signByHand = () => {
 	signingByHand.value = true;
-	let canvas = document.querySelector(`#canvas${selectedPage.value}`) as HTMLCanvasElement;
+	console.log
+	let canvas = document.querySelector(`#canvas${showAllPages.value ? selectedPage.value : 0}`) as HTMLCanvasElement;
 	const canvasCopy = canvas?.cloneNode(true) as HTMLCanvasElement;
 
 	canvas?.parentNode?.append(canvasCopy);
@@ -193,18 +260,19 @@ const signByHand = () => {
 		preserveObjectStacking: true,
 		width: canvas.offsetWidth,
 		height: canvas.offsetHeight,
+
 	});
-	canvas = document.querySelector(`#canvas${selectedPage.value}`) as HTMLCanvasElement;
+	canvas = document.querySelector(`#canvas${showAllPages.value ? selectedPage.value : 0}`) as HTMLCanvasElement;
 
 	const cc = (canvas?.parentNode as HTMLElement).lastChild as HTMLCanvasElement;
 	cc.style.position = 'absolute';
 	cc.style.top = '0';
 
 }
-const handleDocumentRender = () => {
+const handleDocumentRender = async () => {
 	loading.value = false;
 	totalPages.value = pdfRef.value.pageCount;
-	loadSignatures();
+	await loadSignatures();
 }
 
 watch(
@@ -215,6 +283,7 @@ watch(
 			return;
 		}
 		page.value = 1;
+		initListeners();
 	}
 );
 
@@ -247,8 +316,6 @@ const initListeners = () => {
 			ev.preventDefault();
 		});
 		canvas.addEventListener('drop', (ev) => {
-			console.log('drop');
-			debugger;
 			if (draggedItem.value) {
 				store.deleteSignature(draggedItem.value.fs);
 				draggedItem.value.section.remove();
@@ -313,53 +380,97 @@ const addSignature = (data: string, x: number, y: number, init = false, initAnno
 	bi.onload = async () => {
 		const droppedX = x;
 		const droppedY = y;
-		const scaleImageCoef = 1;
-		bi.width = bi.width * scaleImageCoef;
-		bi.height = bi.height * scaleImageCoef;
-		const imageWidth = bi.width;
-		const imageHeight = bi.height;
+		// coefficient that's the percentage of 100px of the page
+		let imageWidth = bi.width;
+		let imageHeight = bi.height;
+
 		const windowWidth = document.body.offsetWidth;
 		const spacingX = (document.querySelectorAll(".vue-pdf-embed")[0] as HTMLElement).offsetLeft * 2;
 
 		let canvasId = 0;
 		if (showAllPages.value) {
-			const idParsed = currentPageCanvas.value?.id.match(/\d+/g);
-			if(!idParsed) {
-				return;
-			}
-			canvasId = parseInt(idParsed[0] ?? '0');
+			// get numeric value from current canvas id
+			canvasId = selectedPage.value;
 		} else {
 			canvasId = page.value ? (page.value - 1 < 0 ? 0 : page.value - 1) : 0;
 		}
+		const myPage = document.getElementById(`canvas${showAllPages.value ? canvasId : 0}`) as HTMLCanvasElement;
+		const coefficient = 100 / (myPage?.offsetWidth ?? 1);
+		imageWidth = bi.width * coefficient;
+		imageHeight = bi.height * coefficient;
+
 		let currentFileSignature: FileSignature | undefined = undefined;
 		if (!init) {
-			currentFileSignature = await store.signDocument(parseInt(route.params.id as string), data, droppedX, droppedY, draggedItem.value?.fs.isHandwritten ? draggedItem.value?.fs.width : 100, draggedItem.value?.fs.isHandwritten ? draggedItem.value?.fs.height : 100, canvasId, (windowWidth - spacingX), draggedItem.value?.fs.isHandwritten ? draggedItem.value?.fs.isHandwritten : isHandSignature) ?? undefined;
+
+			currentFileSignature = await store.signDocument(
+				parseInt(route.params.id as string),
+				data,
+				droppedX,
+				droppedY,
+				imageWidth,
+				imageHeight,
+				canvasId,
+				myPage.offsetWidth,
+				draggedItem.value?.fs.isHandwritten ? draggedItem.value?.fs.isHandwritten : isHandSignature) ?? undefined;
 		}
+
+
 		const section = document.createElement('section');
 		const _fileSignature = draggedItem.value ? draggedItem.value.fs : (init ? fileSignature : currentFileSignature);
+
 		fillSectionDataset(section, _fileSignature);
+
 		section.classList.add('signature');
 		section.style.position = 'absolute';
-		section.style.top = (draggedItem.value?.fs.isHandwritten || drawingMobile) ? `${droppedY}px` : `${droppedY - imageHeight / 4}px`;
-		section.style.left = (draggedItem.value?.fs.isHandwritten || drawingMobile) ? `${droppedX}px` : `${droppedX - imageWidth / 4}px`;
+
+
+		const scale = windowWidth / (_fileSignature?.canvasWidth ?? 1);
+
+		console.log("scale", scale);
+
+		section.style.top = (draggedItem.value?.fs.isHandwritten || drawingMobile) ? `${droppedY}px` : `${(droppedY - (_fileSignature?.height ?? 1) / 4) * scale}px`;
+		section.style.left = (draggedItem.value?.fs.isHandwritten || drawingMobile) ? `${droppedX}px` : `${(droppedX - ((_fileSignature?.width ?? 1) / 4)) * scale}px`;
+
 		const img = document.createElement('img');
+
 		img.src = data;
+
 		if (_fileSignature?.isHandwritten) {
-			const width = _fileSignature.pageWidth ?? 1;
-			const coef = (window.innerWidth - spacingX) / width;
-			console.log(coef);
 
-			section.style.top = (draggedItem.value?.fs.isHandwritten || drawingMobile) ? `${(droppedY * coef)}px` : `${droppedY - imageHeight / 4}px`;
-			section.style.left = (draggedItem.value?.fs.isHandwritten || drawingMobile) ? `${(droppedX * coef)}px` : `${droppedX - imageWidth / 4}px`;
+			section.style.top = (draggedItem.value?.fs.isHandwritten || drawingMobile) ? `${(droppedY)}px` : `${droppedY - imageHeight / 4}px`;
+			section.style.left = (draggedItem.value?.fs.isHandwritten || drawingMobile) ? `${(droppedX)}px` : `${droppedX - imageWidth / 4}px`;
 
-			img.style.maxWidth = `${(_fileSignature.width ?? 1) * coef}px`;
-			img.style.maxHeight = `${(_fileSignature.height ?? 1) * coef}px`;
-			section.style.width = `${(_fileSignature.width ?? 1) * coef}px`;
-			section.style.height = `${(_fileSignature.height ?? 1) * coef}px`;
+			img.style.maxWidth = `${(_fileSignature.width ?? 1)}px`;
+			img.style.maxHeight = `${(_fileSignature.height ?? 1)}px`;
+			section.style.width = `${(_fileSignature.width ?? 1)}px`;
+			section.style.height = `${(_fileSignature.height ?? 1)}px`;
 		} else {
+			// bi.width = 1000;
+			// bi.height = 1000;
 
-			section.style.width = `${init ? (initAnnotationLayer?.offsetWidth ?? 0) * 0.1 : currentPageAnnotationLayer.value?.offsetWidth??0 * 0.1}px`;
-			section.style.height = `${bi.height * 0.1}px`;
+
+			// const coef =  window.innerWidth/(_fileSignature?.canvasWidth??1) ;
+			// bi.width = bi.width * coef;
+			// bi.height = bi.height * coef;
+
+			// if (parseInt(coef.toString())==1){
+			// 	const currentCanvas = document.querySelector(`#canvas${canvasId}`) as HTMLCanvasElement;
+			// 	bi.width = 0.1 * currentCanvas.width;
+			// 	bi.height = 0.1 * currentCanvas.height;
+			// }
+			section.style.maxWidth = `${imageWidth}px`;
+			section.style.maxHeight = `${imageHeight}px`;
+			section.style.minWidth = `${imageWidth}px`;
+			section.style.minHeight = `${imageHeight}px`;
+			section.style.width = `${imageWidth}px`;
+			section.style.height = `${imageHeight}px`;
+			img.style.maxWidth = `${imageWidth}px`;
+			img.style.maxHeight = `${imageHeight}px`;
+			img.style.minWidth = `${imageWidth}px`;
+			img.style.minHeight = `${imageHeight}px`;
+			img.style.width = `${imageWidth}px`;
+			img.style.height = `${imageHeight}px`;
+
 		}
 		section.style.zIndex = '100';
 
@@ -385,7 +496,7 @@ const deleteSignature = () => {
 					role: 'cancel',
 					cssClass: 'secondary',
 					handler: () => {
-						// // console.log('Confirm Cancel');
+						selectedSection.value = undefined;
 					}
 				}, {
 					text: 'Okay',
@@ -410,12 +521,14 @@ const loadSignatures = async () => {
 	try {
 		const signatures = store.file_signature_cache?.get(parseInt(route.params?.id as string));
 		if (showAllPages.value) {
+
 			signatures?.forEach(async (sig: FileSignature) => {
 				const signature = await signatureStore.getSignatureById(sig.signatureId);
 				if (signature) {
 					const initCanvas = document.querySelector(`#canvas${sig.pageNumber}`) as HTMLCanvasElement;
 					const initText = document.querySelector(`#canvas${sig.pageNumber}`)?.parentNode?.querySelector('.textLayer') as HTMLDivElement;
 					const initAnnotation = document.querySelector(`#canvas${sig.pageNumber}`)?.parentNode?.querySelector('.annotationLayer') as HTMLDivElement;
+					selectedPage.value = sig.pageNumber;
 					await addSignature(signature.signature, sig.posX, sig.posY, true, initAnnotation, initCanvas, initText, sig, sig.isHandwritten, sig.isHandwritten);
 				}
 			})
@@ -432,7 +545,7 @@ const loadSignatures = async () => {
 			})
 		}
 	} catch (error) {
-		// // console.log(error);
+		console.log(error);
 	}
 }
 
@@ -456,40 +569,75 @@ const dragmouse = (e: any, item: any) => {
 };
 
 
-
 const touchDragItem = ref<any>()
-
+const timing = ref<number>()
 const touchstartDrag = (e: any, item: any, arr: any, fromSection: boolean) => {
 	// This function is used to create the image element that will be used to display the signature
 	// The image is created as a new element and it's attributes are set
 	// The image is then appended to the app element
 
 	// Create a new image element
-	const image = document.createElement("img");
-	// Set its ID to "image-float"
-	image.setAttribute("id", "image-float");
-	// Set its source to the item's signature
-	image.src = item.signature;
-	// Set its width to 100px if not on a mobile device, or 50px if on a mobile device
-	image.width = isPlatform('capacitor') && fromSection ? 50 : 100;
-	// Set its height to 100px if not on a mobile device, or 50px if on a mobile device
-	image.height = isPlatform('capacitor') && fromSection ? 50 : 100;
-	// Set its position to absolute
-	image.style.position = 'absolute';
+	timing.value = setTimeout(() => {
+		const image = document.createElement("img");
+		// Set its ID to "image-float"
+		image.setAttribute("id", "image-float");
+		// Set its source to the item's signature
+		image.src = item.signature;
+		// 10% of the width of the page
+		const width = 0.1 * document.body.clientWidth;
+		// 10% of the height of the page
+		const height = 0.1 * document.body.clientHeight;
+		// Set its width to 10% of the width of the page
+		image.width = width;
+		// Set its height to 10% of the height of the page
+		image.height = height;
 
-	// Get the x position of the touch event
-	const left = e.touches[0].pageX;
-	// Get the y position of the touch event
-	const top = e.touches[0].pageY;
-	// Set the x position of the image to the x position of the touch event
-	image.style.left = left + 'px';
-	// Set the y position of the image to the y position of the touch event
-	image.style.top = top + 'px';
+		// Set its position to absolute
+		image.style.position = 'absolute';
 
-	// Set the touchDragItem value to the image element
-	touchDragItem.value = image
-	// Append the image to the document body
-	document.getElementById('app')?.appendChild(image);
+		// Get the x position of the touch event
+		const left = e.touches[0].pageX;
+		// Get the y position of the touch event
+		const top = e.touches[0].pageY;
+
+		// Set the image's left position to the x position of the touch event
+		image.style.left = `${left}px`;
+		// Set the image's top position to the y position of the touch event
+		image.style.top = `${top}px`;
+
+		// Append the image to the app element
+		document.getElementById("app")?.appendChild(image);
+	}, 500);
+	// const image = document.createElement("img");
+	// // Set its ID to "image-float"
+	// image.setAttribute("id", "image-float");
+	// // Set its source to the item's signature
+	// image.src = item.signature;
+	// // 10% of the width of the page
+	// const width = 0.1 * document.body.clientWidth;
+	// // 10% of the height of the page
+	// const height = 0.1 * document.body.clientHeight;
+	// // Set its width to 10% of the width of the page
+	// image.width = width;
+	// // Set its height to 10% of the height of the page
+	// image.height = height;
+
+	// // Set its position to absolute
+	// image.style.position = 'absolute';
+
+	// // Get the x position of the touch event
+	// const left = e.touches[0].pageX;
+	// // Get the y position of the touch event
+	// const top = e.touches[0].pageY;
+	// // Set the x position of the image to the x position of the touch event
+	// image.style.left = left + 'px';
+	// // Set the y position of the image to the y position of the touch event
+	// image.style.top = top + 'px';
+
+	// // Set the touchDragItem value to the image element
+	// touchDragItem.value = image
+	// // Append the image to the document body
+	// document.getElementById('app')?.appendChild(image);
 };
 
 const touchmoveDrag = (e: any) => {
@@ -499,7 +647,8 @@ const touchmoveDrag = (e: any) => {
 	// this will give us the dragging feeling of the element while actually it's a different element
 	const left = e.touches[0].pageX;
 	const top = e.touches[0].pageY;
-	if(image){
+	isDragging.value = true;
+	if (image) {
 		image.style.position = 'absolute'
 		image.style.left = left + 'px';
 		image.style.top = top + 'px';
@@ -509,10 +658,10 @@ const touchmoveDrag = (e: any) => {
 const touchendDrag = (e: TouchEvent) => {
 	(touchDragItem.value as HTMLImageElement).remove();
 	const deleteMobile = document.getElementById('delete-mobile');
-	const minXDeleteMobile = deleteMobile?.getBoundingClientRect().left??0;
-	const maxXDeleteMobile = deleteMobile?.getBoundingClientRect().right??0;
-	const minYDeleteMobile = deleteMobile?.getBoundingClientRect().top??0;
-	const maxYDeleteMobile = deleteMobile?.getBoundingClientRect().bottom??0;
+	const minXDeleteMobile = deleteMobile?.getBoundingClientRect().left ?? 0;
+	const maxXDeleteMobile = deleteMobile?.getBoundingClientRect().right ?? 0;
+	const minYDeleteMobile = deleteMobile?.getBoundingClientRect().top ?? 0;
+	const maxYDeleteMobile = deleteMobile?.getBoundingClientRect().bottom ?? 0;
 	const touchX = e.changedTouches[0].clientX;
 	const touchY = e.changedTouches[0].clientY;
 	const overlap = !(maxXDeleteMobile < touchX ||
@@ -553,6 +702,7 @@ const touchendDrag = (e: TouchEvent) => {
 
 
 	isDragging.value = false;
+	clearTimeout(timing.value);
 
 }
 
@@ -566,7 +716,7 @@ function getFileSignatureFromSection(mySection: HTMLElement): FileSignature {
 		height: parseFloat(mySection?.dataset.height as string),
 		pageNumber: parseInt(mySection?.dataset.pageNumber as string),
 		signatureId: parseInt(mySection?.dataset.signatureId as string),
-		pageWidth: parseFloat(mySection?.dataset.pageWidth as string),
+		canvasWidth: parseFloat(mySection?.dataset.canvasWidth as string),
 		isHandwritten: mySection?.dataset.isHandwritten === 'true',
 	};
 }
@@ -600,7 +750,6 @@ function addEventListenersToSection(section: HTMLElement, data: string, currentF
 
 
 	section.ondragstart = (ev) => {
-		// console.log('dragstart');
 		const datas = ((ev.target as HTMLElement).parentNode) as HTMLElement;
 		draggedItem.value = {
 			fs: {
@@ -611,7 +760,7 @@ function addEventListenersToSection(section: HTMLElement, data: string, currentF
 				height: parseFloat(datas.dataset.height ?? '0'),
 				pageNumber: parseInt(datas.dataset.pageNumber ?? '0'),
 				signatureId: parseInt(datas.dataset.signatureId ?? '0'),
-				pageWidth: parseFloat(datas.dataset.pageWidth ?? '0'),
+				canvasWidth: parseFloat(datas.dataset.canvasWidth ?? '0'),
 				isHandwritten: datas.dataset.isHandwritten === 'true',
 			},
 			section: datas,
@@ -635,13 +784,11 @@ function addEventListenersToSection(section: HTMLElement, data: string, currentF
 				height: parseFloat(datas.dataset.height ?? '0'),
 				pageNumber: parseInt(datas.dataset.pageNumber ?? '0'),
 				signatureId: parseInt(datas.dataset.signatureId ?? '0'),
-				pageWidth: parseFloat(datas.dataset.pageWidth ?? '0'),
+				canvasWidth: parseFloat(datas.dataset.canvasWidth ?? '0'),
 				isHandwritten: datas.dataset.isHandwritten == 'true',
 			},
 			section: datas,
 		};
-		// // console.log('touchstart');
-		// // console.log(selectedFileSignature.value);
 		touchstartDrag(ev, { signature: data }, [], true);
 	};
 
@@ -654,7 +801,6 @@ function addEventListenersToSection(section: HTMLElement, data: string, currentF
 	};
 
 	section.onclick = (ev) => {
-		console.log('click');
 		ev.preventDefault();
 		ev.stopPropagation();
 
@@ -688,12 +834,39 @@ function fillSectionDataset(section: HTMLElement, currentFileSignature: FileSign
 	section.dataset.height = currentFileSignature?.height.toString();
 	section.dataset.pageNumber = currentFileSignature?.pageNumber.toString();
 	section.dataset.signatureId = currentFileSignature?.signatureId.toString();
-	section.dataset.pageWidth = currentFileSignature?.pageWidth.toString();
+	section.dataset.canvasWidth = currentFileSignature?.canvasWidth.toString();
 	section.dataset.isHandwritten = currentFileSignature?.isHandwritten.toString();
 
 }
 </script>
 <style>
+.openSig {
+	position: fixed;
+	bottom: 0;
+	left: 50%;
+	transform: translateX(-50%);
+}
+
+.openSigItem {
+	display: inline-block;
+	margin: 0 1rem;
+	padding: 0.5rem 1rem;
+	background-color: #890505;
+	border-radius: 50% 50% 0 0;
+}
+
+.openSigSignatures {
+	display: flex;
+	flex-direction: row;
+	justify-content: center;
+	align-items: center;
+	position: fixed;
+	bottom: 0;
+	left: 50%;
+	transform: translateX(-50%) translateY(100%);
+	background-color: #890505;
+}
+
 .vue-pdf-embed {
 	width: 95% !important;
 	margin: 0 auto;
@@ -796,5 +969,13 @@ function fillSectionDataset(section: HTMLElement, currentFileSignature: FileSign
 	cursor: grabbing !important;
 	cursor: -moz-grabbing !important;
 	cursor: -webkit-grabbing !important;
+}
+
+.imgSlider {
+	max-width: 100px;
+	max-height: 100px;
+	min-width: 100px;
+	min-height: 100px;
+
 }
 </style>

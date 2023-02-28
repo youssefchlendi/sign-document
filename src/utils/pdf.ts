@@ -52,7 +52,7 @@ export const downloadPdf = async (fileId:number) => {
 			translate(0, firstPage.getHeight());
 			
 			
-			const scale = page.getWidth() / fileSignatureJoined.pageWidth;
+			const scale = page.getWidth() / fileSignatureJoined.canvasWidth;
 			console.log(scale);
 			const { width, height } = page.getSize()
 
