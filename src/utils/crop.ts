@@ -14,6 +14,7 @@ export const cropBase64Image = (base64String: string): Promise<{ img: string, le
 			let right = 0;
 			let top = canvas.height;
 			let bottom = 0;
+			console.log('width', canvas.width, 'height', canvas.height);
 			for (let y = 0; y < canvas.height; y++) {
 				for (let x = 0; x < canvas.width; x++) {
 					const i = (y * canvas.width + x) * 4;

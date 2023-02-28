@@ -32,7 +32,7 @@ export const useFilesStore = defineStore("files-store", () => {
 						width: element.width,
 						height: element.height,
 						pageNumber: element.pageNumber,
-						pageWidth: element.pageWidth,
+						canvasWidth: element.canvasWidth,
 						isHandwritten: element.isHandwritten
 					},
 					...fileSignatureCache.value?.size
@@ -65,8 +65,8 @@ export const useFilesStore = defineStore("files-store", () => {
 		files.value = [];
 	}
 
-	async function signDocument(docId: number, sig: string, posX: number, posY: number, width: number, height: number, pageNumber: number, pageWidth:number, isHandWritten:boolean ): Promise<FileSignature | null> {
-		console.error('signing', docId, sig, posX, posY, width, height, pageNumber);
+	async function signDocument(docId: number, sig: string, posX: number, posY: number, width: number, height: number, pageNumber: number, canvasWidth:number, isHandWritten:boolean ): Promise<FileSignature | null> {
+		// console.error('signing', docId, sig, posX, posY, width, height, pageNumber);
 
 		localStorage.removeItem(`file_signature_cache_${docId}`);
 		const file = getFileById(docId);
@@ -89,7 +89,7 @@ export const useFilesStore = defineStore("files-store", () => {
 					width: width,
 					height: height,
 					pageNumber: pageNumber,
-					pageWidth: pageWidth,
+					canvasWidth: canvasWidth,
 					isHandwritten: isHandWritten
 				},
 				...((fileSignatureCache.value && fileSignatureCache.value?.size && fileSignatureCache.value.get(
@@ -114,7 +114,7 @@ return {
 	width: width,
 	height: height,
 	pageNumber: pageNumber,
-	pageWidth: pageWidth,
+	canvasWidth: canvasWidth,
 	isHandwritten: isHandWritten
 }
 		}
