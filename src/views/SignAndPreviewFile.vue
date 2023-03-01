@@ -18,49 +18,63 @@
 							<ion-buttons>
 
 								<ion-button @click="menu = true" v-if="!menu">
-									<ion-icon :icon="arrowUp"></ion-icon>
-								</ion-button>
-
-								<ion-button @click="menu = false" v-if="menu">
 									<ion-icon :icon="arrowDown"></ion-icon>
+								</ion-button>
+								
+								<ion-button @click="menu = false" v-if="menu">
+									<ion-icon :icon="arrowUp"></ion-icon>
 								</ion-button>
 							</ion-buttons>
 						</ion-col>
 					</ion-row>
 					<ion-row v-if="menu">
 						<!-- carroussel -->
-						<ion-col size="12">
-							<ion-slides>
+						<ion-col size="12" >
+							<ion-slides class="signaturesmenu">
 								<ion-slide v-for="(sig, index) in signatureStore.signatures" :key="index">
-									<ion-img @dragstart="dragmouse($event, sig)"
-										@touchstart.prevent="touchstartDrag($event, sig, [], false)"
-										@touchmove="touchmoveDrag" @touchend="touchendDrag" style="width:100px;height:100px"
-										class="grabbable square imgSlider" width="100px" height="100px" :draggable="true"
+									<ion-img 
+										@dragstart="dragmouse($event, sig)"
+										@touchstart.prevent="touchstartDrag($event, sig, [], false)" @touchmove="touchmoveDrag" @touchend="touchendDrag"
+										style="width:100px;height:100px"
+										class="grabbable square imgSlider" width="100px" height="100px" 
 										:src="sig.signature" />
 								</ion-slide>
 							</ion-slides>
 						</ion-col>
-
+						
 					</ion-row>
 				</ion-grid>
-
+				
 			</ion-toolbar>
 		</ion-header>
 		<ion-content :fullscreen="true">
+			<!-- <ion-slides style="height:300px;">
+				<ion-slide v-for="(sig, index) in signatureStore.signatures" :key="index">
+					<ion-img 
+						@contextmenu.prevent=""
+						@dragstart="dragmouse($event, sig)"
+						@touchstart.prevent="touchstartDrag($event, sig, [], false)" @touchmove="touchmoveDrag"
+						style="width:100px;height:100px"
+						class="grabbable square imgSlider" width="100px" height="100px" 
+						:src="sig.signature" />
+				</ion-slide>
+			</ion-slides> -->
 			<div class="footer " v-if="((isPlatform('capacitor'))) && !isDragging && false">
 				<ion-slides style="" :pager="false">
 					<ion-slide v-if="signatureStore.signatures.length == 0">
 						<h1>Slide 1</h1>
 					</ion-slide>
 					<ion-slide style="height:100px;width:100px;" v-for="sig in signatureStore.signatures" :key="sig.id">
-						<ion-img @dragstart="dragmouse($event, sig)"
-							@touchstart.prevent="touchstartDrag($event, sig, [], false)" @touchmove="touchmoveDrag"
-							@touchend="touchendDrag" style="width:100px;height:100px" class="grabbable square" width="100px"
+						<ion-img 
+							@dragstart="dragmouse($event, sig)"
+							@touchstart.prevent="touchstartDrag($event, sig, [], false)" @touchmove="touchmoveDrag($event,true)"
+							@touchend="touchendDrag" style="width:100px;height:100px" class="grabbable square mySigCar" width="100px"
 							height="100px" :draggable="true" :src="sig.signature" />
 					</ion-slide>
 				</ion-slides>
 			</div>
-			<div id="delete-mobile" class="footer danger-footer" v-show="(((isPlatform('capacitor'))) && isDragging)">
+			
+			<div id="delete-mobile" class="footer danger-footer" v-show="(isPlatform('capacitor') && isDragging)">
 				<h1>
 					Drop here to delete
 				</h1>
@@ -180,7 +194,7 @@ const validateSignByHand = async () => {
 		// eslint-disable-next-line prefer-const
 		let { img, left, top, right, bottom } = await cropBase64Image(base64);
 
-		signatureStore.addSignature('data:image/png;base64,' + img, store.getFileById(parseInt(route.params.id as string))?.name + ' - ' + (selectedPage.value + 1))
+		signatureStore.addSignature('data:image/png;base64,' + img, store.getFileById(parseInt(route.params.id as string))?.name + ' - ' + (selectedPage.value + 1),true)
 
 		const data = 'data:image/png;base64,' + img;
 
@@ -220,16 +234,18 @@ const validateSignByHand = async () => {
 				true
 			) ?? undefined;
 
-			createAndAppendSection(
-				currentFileSignature,
-				(droppedY),
-				(droppedX),
-				right,
-				left,
-				bottom,
-				top,
-				data
-			);
+			// createAndAppendSection(
+			// 	currentFileSignature,
+			// 	(droppedY),
+			// 	(droppedX),
+			// 	right,
+			// 	left,
+			// 	bottom,
+			// 	top,
+			// 	data
+			// );
+
+
 
 			await loadSignatures();
 
@@ -417,7 +433,6 @@ const addSignature = (data: string, x: number, y: number, init = false, initAnno
 
 		const section = document.createElement('section');
 		const _fileSignature = draggedItem.value ? draggedItem.value.fs : (init ? fileSignature : currentFileSignature);
-
 		fillSectionDataset(section, _fileSignature);
 
 		section.classList.add('signature');
@@ -478,7 +493,12 @@ const addSignature = (data: string, x: number, y: number, init = false, initAnno
 
 
 		section.appendChild(img);
+
 		init ? initAnnotationLayer?.appendChild(section) : currentPageAnnotationLayer.value?.appendChild(section);
+
+		
+
+		// loadSignatures();
 	}
 
 }
@@ -577,7 +597,6 @@ const touchstartDrag = (e: any, item: any, arr: any, fromSection: boolean) => {
 	// The image is then appended to the app element
 
 	// Create a new image element
-	timing.value = setTimeout(() => {
 		const image = document.createElement("img");
 		// Set its ID to "image-float"
 		image.setAttribute("id", "image-float");
@@ -604,10 +623,27 @@ const touchstartDrag = (e: any, item: any, arr: any, fromSection: boolean) => {
 		image.style.left = `${left}px`;
 		// Set the image's top position to the y position of the touch event
 		image.style.top = `${top}px`;
+		touchDragItem.value = image
 
 		// Append the image to the app element
+		image.addEventListener('touchmove', (e) => {
+			e.preventDefault();
+			e.stopPropagation();
+			console.log('touchmove');
+		});
+		image.addEventListener('touchend', (e) => {
+			e.preventDefault();
+			e.stopPropagation();
+			console.log('touchend');
+		});
+		image.addEventListener('touchcancel', (e) => {
+			e.preventDefault();
+			e.stopPropagation();
+			console.log('touchcancel');
+		});
 		document.getElementById("app")?.appendChild(image);
-	}, 500);
+
+		
 	// const image = document.createElement("img");
 	// // Set its ID to "image-float"
 	// image.setAttribute("id", "image-float");
@@ -640,14 +676,13 @@ const touchstartDrag = (e: any, item: any, arr: any, fromSection: boolean) => {
 	// document.getElementById('app')?.appendChild(image);
 };
 
-const touchmoveDrag = (e: any) => {
-
+const touchmoveDrag = (e: any,fromCarrousel=false) => {
 	// on touch move or dragging, we get the newly created image element
 	const image = document.getElementById('image-float')
 	// this will give us the dragging feeling of the element while actually it's a different element
 	const left = e.touches[0].pageX;
 	const top = e.touches[0].pageY;
-	isDragging.value = true;
+	!fromCarrousel?isDragging.value = true:isDragging.value = false;
 	if (image) {
 		image.style.position = 'absolute'
 		image.style.left = left + 'px';
@@ -656,6 +691,7 @@ const touchmoveDrag = (e: any) => {
 
 };
 const touchendDrag = (e: TouchEvent) => {
+	console.log('touchendDrag');
 	(touchDragItem.value as HTMLImageElement).remove();
 	const deleteMobile = document.getElementById('delete-mobile');
 	const minXDeleteMobile = deleteMobile?.getBoundingClientRect().left ?? 0;
@@ -696,19 +732,21 @@ const touchendDrag = (e: TouchEvent) => {
 			currentPageCanvas.value = canvas;
 			currentPageAnnotationLayer.value = canvas.parentElement?.querySelector('.annotationLayer') as HTMLDivElement;
 			currentPageTextLayer.value = canvas.parentElement?.querySelector('.textLayer') as HTMLDivElement;
+			selectedPage.value = parseInt(canvas.id.replace('canvas', ''));
+			draggedItem.value = undefined;
 			addSignature((touchDragItem.value as HTMLImageElement).src, touchX - canvasRect.left, touchY - canvasRect.top, false, undefined, undefined, undefined, undefined, mySection?.dataset.isHandwritten === 'true', mySection?.dataset.isHandwritten === 'true');
 		}
 	});
 
 
 	isDragging.value = false;
-	clearTimeout(timing.value);
 
 }
 
 
 function getFileSignatureFromSection(mySection: HTMLElement): FileSignature {
 	return {
+		id: (mySection?.dataset.id as string),
 		fileId: parseInt(mySection?.dataset.fileId as string),
 		posX: parseFloat(mySection?.dataset.posX as string),
 		posY: parseFloat(mySection?.dataset.posY as string),
@@ -753,6 +791,7 @@ function addEventListenersToSection(section: HTMLElement, data: string, currentF
 		const datas = ((ev.target as HTMLElement).parentNode) as HTMLElement;
 		draggedItem.value = {
 			fs: {
+				id: datas.dataset.id as string,
 				fileId: parseInt(datas.dataset.fileId ?? '0'),
 				posX: parseFloat(datas.dataset.posX ?? '0'),
 				posY: parseFloat(datas.dataset.posY ?? '0'),
@@ -777,6 +816,7 @@ function addEventListenersToSection(section: HTMLElement, data: string, currentF
 		const datas = ((ev.target as HTMLElement).parentNode) as HTMLElement;
 		draggedItem.value = {
 			fs: {
+				id: datas.dataset.id as string,
 				fileId: parseInt(datas.dataset.fileId ?? '0'),
 				posX: parseFloat(datas.dataset.posX ?? '0'),
 				posY: parseFloat(datas.dataset.posY ?? '0'),
@@ -827,6 +867,7 @@ function positionSectionHandWritten(section: HTMLElement, droppedY: number, drop
 }
 
 function fillSectionDataset(section: HTMLElement, currentFileSignature: FileSignature | undefined) {
+	section.dataset.id = currentFileSignature?.id.toString();
 	section.dataset.fileId = currentFileSignature?.fileId.toString();
 	section.dataset.posX = currentFileSignature?.posX.toString();
 	section.dataset.posY = currentFileSignature?.posY.toString();
@@ -976,6 +1017,14 @@ function fillSectionDataset(section: HTMLElement, currentFileSignature: FileSign
 	max-height: 100px;
 	min-width: 100px;
 	min-height: 100px;
+	filter: drop-shadow(0px 0px 5px #ffffff56);
 
 }
+
+.signaturesmenu{
+	box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.5);
+	border-radius: 20px;
+}
+
+
 </style>
