@@ -14,8 +14,8 @@ export const useSignaturesStore = defineStore("signature-store",() => {
 	signatures.value = JSON.parse(localStorage.getItem('signatures') || '[]').map((signature: any) => new Signature(signature.id, signature.signature, signature.title));
 
 
-	async function addSignature(signature: string, title: string) {
-		signatures.value.push(new Signature(null,signature, title));
+	async function addSignature(signature: string, title: string,hand_written = false) {
+		signatures.value.push(new Signature(null,signature, title,hand_written));
 		localStorage.setItem('signatures', JSON.stringify(signatures.value));
 	}
 
