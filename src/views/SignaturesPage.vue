@@ -103,7 +103,16 @@ const cropBase64Image = (base64String) => {
 			croppedCanvas.width = croppedWidth;
 			croppedCanvas.height = croppedHeight;
 			croppedCtx.drawImage(canvas, left, top, croppedWidth, croppedHeight, 0, 0, croppedWidth, croppedHeight);
-			const croppedBase64String = croppedCanvas.toDataURL("image/png").split(",")[1];
+			const resizedCanvas = document.createElement("canvas");
+			const resizedCtx = resizedCanvas.getContext("2d");
+			resizedCanvas.width = 100;
+			resizedCanvas.height = 100;
+			resizedCtx.drawImage(croppedCanvas, 0, 0, croppedWidth, croppedHeight, 0, 0, 100, 100);
+
+			const croppedBase64String = resizedCanvas.toDataURL("image/png").split(",")[1];
+
+			// const croppedBase64String = .toDataURL("image/png").split(",")[1];
+			
 			resolve(croppedBase64String);
 		};
 		img.onerror = function () {
