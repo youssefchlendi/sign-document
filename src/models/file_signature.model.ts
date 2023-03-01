@@ -1,4 +1,5 @@
 export interface FileSignature {
+	id: string;
 	fileId: number;
 	signatureId: number;
 	posX: number;

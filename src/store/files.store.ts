@@ -25,6 +25,7 @@ export const useFilesStore = defineStore("files-store", () => {
 				fileSignatureCache.value?.set(
 					file.id,
 					[{
+						id: element.id,
 						fileId: file.id,
 						signatureId: element.signatureId,
 						posX: element.posX,
@@ -78,10 +79,11 @@ export const useFilesStore = defineStore("files-store", () => {
 				// 	return (sig.signatureId !== sigId && sig.pageNumber !== pageNumber) || (sig.signatureId == sigId && sig.pageNumber !== pageNumber)
 				// }))
 			}
-			
+			const id = docId+"_"+sigId+"_"+Date.now();
 			fileSignatureCache.value?.set(
 				docId,
 				[{
+					id: id,
 					fileId: docId,
 					signatureId: sigId,
 					posX: posX,
@@ -107,6 +109,7 @@ export const useFilesStore = defineStore("files-store", () => {
 localStorage.setItem(`file_signature_cache_${docId}`, JSON.stringify(fileSignatureCache.value.get(docId)));
 
 return {
+	id: id,
 	fileId: docId,
 	signatureId: sigId,
 	posX: posX,
@@ -128,7 +131,12 @@ const deleteSignature = (
 ) => {
 	const oldSigs = fileSignatureCache.value?.get(fileSignature.fileId) as FileSignature[];
 	if (oldSigs) {
-		const mySig = oldSigs.filter(i=>i.signatureId == fileSignature.signatureId && i.pageNumber == fileSignature.pageNumber && i.posX == fileSignature.posX && i.posY == fileSignature.posY  );
+		const mySig = oldSigs.filter(i=>{
+
+			
+			return i.id==fileSignature.id}
+			);
+		console.log(mySig[0])
 		fileSignatureCache.value?.set(fileSignature.fileId, oldSigs.filter((sig: any) => {
 			return sig != mySig[0]
 		}))
